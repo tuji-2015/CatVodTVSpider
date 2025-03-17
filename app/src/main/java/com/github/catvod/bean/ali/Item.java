@@ -2,7 +2,7 @@ package com.github.catvod.bean.ali;
 
 import android.text.TextUtils;
 
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Util;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class Item {
+public class Item implements Comparable<Item> {
 
     @SerializedName("items")
     private List<Item> items;
@@ -70,7 +70,7 @@ public class Item {
     }
 
     public String getSize() {
-        return size == 0 ? "" : "[" + Utils.getSize(size) + "]";
+        return size == 0 ? "" : "[" + Util.getSize(size) + "]";
     }
 
     public String getParent() {
@@ -84,5 +84,14 @@ public class Item {
 
     public String getDisplayName() {
         return TextUtils.join(" ", Arrays.asList(getParent(), getName(), getSize())).trim();
+    }
+
+    public String getSortName() {
+        return TextUtils.join(" ", Arrays.asList(getParent(), Util.getDigit(getName()))).trim();
+    }
+
+    @Override
+    public int compareTo(Item item) {
+        return getSortName().compareTo(item.getSortName());
     }
 }

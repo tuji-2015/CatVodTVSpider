@@ -5,7 +5,7 @@ import android.text.TextUtils;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Vod;
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Util;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.thegrizzlylabs.sardineandroid.DavResource;
@@ -17,8 +17,6 @@ import java.util.List;
 
 public class Drive {
 
-    @SerializedName("vodPic")
-    private String vodPic;
     @SerializedName("drives")
     private List<Drive> drives;
     @SerializedName("name")
@@ -44,10 +42,6 @@ public class Drive {
 
     public List<Drive> getDrives() {
         return drives == null ? new ArrayList<>() : drives;
-    }
-
-    public String getVodPic() {
-        return TextUtils.isEmpty(vodPic) ? "" : vodPic;
     }
 
     public String getName() {
@@ -94,7 +88,7 @@ public class Drive {
     }
 
     public Vod vod(DavResource item, String vodPic) {
-        return new Vod(getName() + item.getPath(), item.getName(), vodPic, Utils.getSize(item.getContentLength()), item.isDirectory());
+        return new Vod(getName() + item.getPath(), item.getName(), vodPic, Util.getSize(item.getContentLength()), item.isDirectory());
     }
 
     @Override

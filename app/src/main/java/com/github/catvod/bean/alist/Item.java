@@ -3,7 +3,7 @@ package com.github.catvod.bean.alist;
 import android.text.TextUtils;
 
 import com.github.catvod.bean.Vod;
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Util;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -72,6 +72,10 @@ public class Item {
         return TextUtils.isEmpty(thumb) ? "" : thumb;
     }
 
+    public void setThumb(String thumb) {
+        this.thumb = thumb;
+    }
+
     public String getUrl() {
         return TextUtils.isEmpty(url) ? "" : url.startsWith("//") ? "http:" + url : url;
     }
@@ -94,18 +98,19 @@ public class Item {
     }
 
     public boolean isMedia(boolean isNew) {
+        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return true;
         if (isNew) return getType() == 2 || getType() == 3;
         return getType() == 3 || getType() == 4;
     }
 
     public boolean ignore(boolean isNew) {
-        if (getName().endsWith(".ts")) return false;
+        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return false;
         if (isNew) return getType() == 0 || getType() == 4;
         return getType() == 0 || getType() == 2 || getType() == 5;
     }
 
     public String getExt() {
-        return getName().substring(getName().lastIndexOf(".") + 1);
+        return Util.getExt(getName());
     }
 
     public String getVodId(String id) {
@@ -117,7 +122,7 @@ public class Item {
     }
 
     public String getRemark() {
-        return Utils.getSize(getSize());
+        return Util.getSize(getSize());
     }
 
     public Vod getVod(String id, String pic) {

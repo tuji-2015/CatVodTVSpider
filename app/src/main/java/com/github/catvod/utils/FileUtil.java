@@ -1,73 +1,48 @@
 package com.github.catvod.utils;
 
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.text.TextUtils;
+
 import com.github.catvod.spider.Init;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URLConnection;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class FileUtil {
 
-    public static File getCacheDir() {
-        return Init.context().getExternalCacheDir();  //获取应用程序配置的缓存目录
+    public static void openFile(File file) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setDataAndType(getShareUri(file), FileUtil.getMimeType(file.getName()));
+        Init.context().startActivity(intent);
     }
 
-    public static File getCacheFile(String fileName) {  //获取应用程序配置的缓存目录下的文件
-        return new File(getCacheDir(), fileName);
-    }
-
-    public static void write(File file, String data) {
-        write(file, data.getBytes());
-    }
-
-    public static void write(File file, byte[] data) {
-        try {
-            FileOutputStream fos = new FileOutputStream(file);
-            fos.write(data);
-            fos.flush();
-            fos.close();
-            chmod(file);
+    public static void unzip(File target, File path) {
+        try (ZipFile zip = new ZipFile(target.getAbsolutePath())) {
+            Enumeration<?> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                File out = new File(path, entry.getName());
+                if (entry.isDirectory()) out.mkdirs();
+                else Path.copy(zip.getInputStream(entry), out);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-    public static File chmod(File file) {
-        try {
-            Process process = Runtime.getRuntime().exec("chmod 777 " + file);
-            process.waitFor();
-            return file;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return file;
-        }
+    private static Uri getShareUri(File file) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.N ? Uri.fromFile(file) : FileProvider.getUriForFile(Init.context(), Init.context().getPackageName() + ".provider", file);
     }
 
-    public static String read(File file) {
-        try {
-            return read(new FileInputStream(file));
-        } catch (Exception e) {
-            return "";
-        }
+    private static String getMimeType(String fileName) {
+        String mimeType = URLConnection.guessContentTypeFromName(fileName);
+        return TextUtils.isEmpty(mimeType) ? "*/*" : mimeType;
     }
-
-
-    public static String read(InputStream is) {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            StringBuilder sb = new StringBuilder();
-            String text;
-            while ((text = br.readLine()) != null) sb.append(text).append("\n");
-            br.close();
-            return Utils.substring(sb.toString());
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
-
 }

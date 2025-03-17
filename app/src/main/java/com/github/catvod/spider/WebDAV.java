@@ -12,7 +12,8 @@ import com.github.catvod.bean.webdav.Drive;
 import com.github.catvod.bean.webdav.Sorter;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Image;
+import com.github.catvod.utils.Util;
 import com.thegrizzlylabs.sardineandroid.DavResource;
 
 import java.io.IOException;
@@ -23,14 +24,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class WebDAV extends Spider {
 
     private static List<Drive> drives;
-    private List<String> playExt;
     private List<String> allExt;
-    private String vodPic;
-    private String ext;
+    private String extend;
 
     private List<Filter> getFilter() {
         List<Filter> items = new ArrayList<>();
@@ -41,18 +41,17 @@ public class WebDAV extends Spider {
 
     private void fetchRule() {
         if (drives != null && !drives.isEmpty()) return;
-        if (ext.startsWith("http")) ext = OkHttp.string(ext);
-        Drive drive = Drive.objectFrom(ext);
+        if (extend.startsWith("http")) extend = OkHttp.string(extend);
+        Drive drive = Drive.objectFrom(extend);
         drives = drive.getDrives();
-        vodPic = drive.getVodPic();
     }
 
     private String getExt(DavResource item) {
-        return item.getName().substring(item.getName().lastIndexOf(".") + 1);
+        return Util.getExt(item.getName());
     }
 
     private String removeExt(DavResource item) {
-        return Utils.removeExt(item.getName());
+        return Util.removeExt(item.getName());
     }
 
     private static Drive getDrive(String name) {
@@ -61,16 +60,14 @@ public class WebDAV extends Spider {
 
     @Override
     public void init(Context context, String extend) {
-        playExt = Arrays.asList("mp4", "mkv", "wmv", "flv", "avi", "mp3", "aac", "flac", "m4a");
-        allExt = new ArrayList<>(Arrays.asList("ass", "ssa", "srt"));
-        allExt.addAll(playExt);
-        ext = extend;
+        this.allExt = new ArrayList<>(Arrays.asList("ass", "ssa", "srt"));
+        this.allExt.addAll(Util.MEDIA);
+        this.extend = extend;
         fetchRule();
     }
 
     @Override
     public String homeContent(boolean filter) throws Exception {
-        fetchRule();
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         for (Drive drive : drives) classes.add(drive.toType());
@@ -88,7 +85,7 @@ public class WebDAV extends Spider {
         List<DavResource> files = new ArrayList<>();
         List<Vod> list = new ArrayList<>();
         Drive drive = getDrive(key);
-        for (DavResource item : getList(drive, path, playExt)) {
+        for (DavResource item : getList(drive, path, Util.MEDIA)) {
             if (item.isDirectory()) folders.add(item);
             else files.add(item);
         }
@@ -96,8 +93,8 @@ public class WebDAV extends Spider {
             Sorter.sort(type, order, folders);
             Sorter.sort(type, order, files);
         }
-        for (DavResource item : folders) list.add(drive.vod(item, vodPic));
-        for (DavResource item : files) list.add(drive.vod(item, vodPic));
+        for (DavResource item : folders) list.add(drive.vod(item, Image.FOLDER));
+        for (DavResource item : files) list.add(drive.vod(item, Image.VIDEO));
         return Result.get().vod(list).page().string();
     }
 
@@ -114,15 +111,15 @@ public class WebDAV extends Spider {
         Sorter.sort("name", "asc", parents);
         List<String> playUrls = new ArrayList<>();
         for (DavResource item : parents) {
-            if (playExt.contains(getExt(item))) {
+            if (Util.isMedia(item.getName())) {
                 playUrls.add(item.getName() + "$" + drive.getName() + item.getPath() + findSubs(drive, item, subs));
             }
         }
         Vod vod = new Vod();
         vod.setVodId(name);
         vod.setVodName(name);
-        vod.setVodPic(vodPic);
         vod.setVodPlayFrom(key);
+        vod.setVodPic(Image.VIDEO);
         vod.setVodPlayUrl(TextUtils.join("#", playUrls));
         return Result.string(vod);
     }
@@ -148,7 +145,7 @@ public class WebDAV extends Spider {
 
     private List<DavResource> getSubs(List<DavResource> items) {
         List<DavResource> subs = new ArrayList<>();
-        for (DavResource item : items) if (Utils.isSub(getExt(item))) subs.add(item);
+        for (DavResource item : items) if (Util.isSub(getExt(item))) subs.add(item);
         return subs;
     }
 
@@ -189,7 +186,14 @@ public class WebDAV extends Spider {
         Object[] result = new Object[3];
         result[0] = 200;
         result[1] = "application/octet-stream";
-        result[2] = drive.getWebdav().get(drive.getHost() + url);
+        result[2] = drive.getWebdav().get(drive.getHost() + url, getHeaders(params));
         return result;
+    }
+
+    private static Map<String, String> getHeaders(Map<String, String> params) {
+        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        List<String> keys = Arrays.asList("referer", "icy-metadata", "range", "connection", "accept-encoding", "user-agent");
+        for (String key : params.keySet()) if (keys.contains(key)) headers.put(key, params.get(key));
+        return headers;
     }
 }

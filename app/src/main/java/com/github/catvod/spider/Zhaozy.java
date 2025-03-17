@@ -4,9 +4,8 @@ import android.content.Context;
 
 import com.github.catvod.bean.Result;
 import com.github.catvod.bean.Vod;
-import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Util;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,31 +24,26 @@ public class Zhaozy extends Ali {
 
     private final Pattern regexAli = Pattern.compile("(https://www.aliyundrive.com/s/[^\"]+)");
     private final Pattern regexVid = Pattern.compile("(\\S+)");
-    private final String siteUrl = "https://zhaoziyuan.la/";
+    private final String siteUrl = "https://zhaoziyuan1.cc/";
     private String username;
     private String password;
 
     private Map<String, String> getHeader() {
         Map<String, String> headers = new HashMap<>();
-        headers.put("User-Agent", Utils.CHROME);
+        headers.put("User-Agent", Util.CHROME);
         headers.put("Referer", siteUrl);
-        headers.put("Cookie", getCookie());
         return headers;
     }
 
-    private String getCookie() {
+    private void getCookie() {
         Map<String, String> params = new HashMap<>();
         params.put("username", username);
         params.put("password", password);
         Map<String, String> headers = new HashMap<>();
-        headers.put("User-Agent", Utils.CHROME);
-        headers.put("Referer", siteUrl + "login.html");
+        headers.put("User-Agent", Util.CHROME);
+        headers.put("Referer", siteUrl + "stop.html");
         headers.put("Origin", siteUrl);
-        Map<String, List<String>> resp = new HashMap<>();
-        OkHttp.post(siteUrl + "logiu.html", params, headers, resp);
-        StringBuilder sb = new StringBuilder();
-        for (String item : resp.get("set-cookie")) sb.append(item.split(";")[0]).append(";");
-        return sb.toString();
+        OkHttp.post(siteUrl + "logiu.html", params, headers);
     }
 
     @Override
@@ -58,6 +52,7 @@ public class Zhaozy extends Ali {
         super.init(context, split[0]);
         username = split[1];
         password = split[2];
+        getCookie();
     }
 
     @Override
@@ -72,14 +67,13 @@ public class Zhaozy extends Ali {
     public String searchContent(String key, boolean quick) throws Exception {
         String url = siteUrl + "so?filename=" + URLEncoder.encode(key);
         Document doc = Jsoup.parse(OkHttp.string(url, getHeader()));
-      //   System.out.println(doc.toString());
         List<Vod> list = new ArrayList<>();
         for (Element element : doc.select("div.li_con div.news_text")) {
             String href = element.select("div.news_text a").attr("href");
             Matcher matcher = regexVid.matcher(href);
             if (!matcher.find()) continue;
             String name = element.select("div.news_text a h3").text();
-            if (!name.contains(key)) continue;    //如果name中不包括key，直接进行下次循环
+            if (!name.contains(key)) continue;
             String remark = element.select("div.news_text a p").text().split("\\|")[1].split("：")[1];
             Vod vod = new Vod();
             vod.setVodPic("https://inews.gtimg.com/newsapp_bt/0/13263837859/1000");
@@ -89,13 +83,5 @@ public class Zhaozy extends Ali {
             list.add(vod);
         }
         return Result.string(list);
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 }

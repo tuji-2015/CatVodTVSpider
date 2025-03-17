@@ -8,7 +8,7 @@ import com.github.catvod.bean.Result;
 import com.github.catvod.bean.Vod;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Utils;
+import com.github.catvod.utils.Util;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,16 +23,16 @@ import java.util.Map;
 
 public class Ysj extends Spider {
 
-    private static final String siteUrl = "https://ysjdm.net";
-    private static final String cateUrl = "https://ysjdm.net/index.php/vod/show";
-    private static final String homeUrl = "https://ysjdm.net/index.php/vod/show/id/20.html";
-    private static final String detailUrl = "https://ysjdm.net/index.php/vod/detail/id/";
-    private static final String searchUrl = "https://ysjdm.net/index.php/vod/search.html";
+    private static final String siteUrl = "https://www.dmmiku.com";
+    private static final String cateUrl = "https://www.dmmiku.com/index.php/vod/show";
+    private static final String homeUrl = "https://www.dmmiku.com/index.php/vod/show/id/20.html";
+    private static final String detailUrl = "https://www.dmmiku.com/index.php/vod/detail/id/";
+    private static final String searchUrl = "https://www.dmmiku.com/index.php/vod/search.html";
     private static final String playUrl = "/index.php/vod/play/id/";
 
     private HashMap<String, String> getHeaders() {
         HashMap<String, String> headers = new HashMap<>();
-        headers.put("User-Agent", Utils.CHROME);
+        headers.put("User-Agent", Util.CHROME);
         return headers;
     }
 
